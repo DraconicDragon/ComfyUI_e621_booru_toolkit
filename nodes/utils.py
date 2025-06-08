@@ -26,3 +26,11 @@ def calculate_dimensions_for_diffusion(
     new_height = (new_height // multiples_of) * multiples_of
 
     return int(new_width), int(new_height)
+
+
+def format_tags(tags: str) -> str:
+    return tags.replace("_", " ").replace("(", "\\(").replace(")", "\\)")
+
+
+def exclude_tags_from_string(tags: str, exclude_list) -> str:
+    return ", ".join([tag for tag in tags.split(", ") if tag not in exclude_list])

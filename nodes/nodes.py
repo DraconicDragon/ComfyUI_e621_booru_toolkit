@@ -2,9 +2,10 @@ import io
 
 import numpy as np
 import requests
-from utils import calculate_dimensions_for_diffusion, to_tensor
 import torch
 from PIL import Image
+
+from ..nodes.utils import calculate_dimensions_for_diffusion, to_tensor
 
 headers = {"User-Agent": "ComfyUI_e621_booru_toolkit/1.0 (by draconicdragon on GitHub)"}
 

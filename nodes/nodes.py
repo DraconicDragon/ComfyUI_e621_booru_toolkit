@@ -2,39 +2,14 @@ import io
 
 import numpy as np
 import requests
+from utils import calculate_dimensions_for_diffusion, to_tensor
 import torch
 from PIL import Image
 
-headers = {"User-Agent": "ComfyUI_e621_booru_toolkit/1.0 (by draconicdragon on github)"}
+headers = {"User-Agent": "ComfyUI_e621_booru_toolkit/1.0 (by draconicdragon on GitHub)"}
 
 # create a blank image tensor to use as a placeholder
 blank_img_tensor = torch.from_numpy(np.zeros((512, 512, 3), dtype=np.float32) / 255.0).unsqueeze(0)
-
-
-def to_tensor(image: Image):
-    return torch.from_numpy(np.array(image).astype(np.float32) / 255.0).unsqueeze(0)
-
-
-def calculate_dimensions_for_diffusion(img_width, img_height, scale_target_avg, multiples_of=64):
-    # Calculate the average of the original dimensions.
-    # This average will be scaled to be near the scale_target_avg.
-    original_avg = (img_width + img_height) / 2.0
-
-    # Determine the scaling factor to get the average near the target.
-    scale_factor = scale_target_avg / original_avg
-
-    # Scale the dimensions while preserving the aspect ratio.
-    new_width = round(img_width * scale_factor)  # rounding because output can be 1023.9999999999
-    new_height = round(img_height * scale_factor)
-
-    # Adjust the scaled dimensions to be multiples of
-    new_width = (new_width // multiples_of) * multiples_of
-    new_height = (new_height // multiples_of) * multiples_of
-
-    return (
-        int(new_width),
-        int(new_height),
-    )
 
 
 def get_e621_post_data(response, img_size):

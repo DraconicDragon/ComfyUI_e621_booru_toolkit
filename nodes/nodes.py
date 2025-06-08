@@ -9,7 +9,7 @@ from PIL import Image
 headers = {"User-Agent": "ComfyUI_e621_booru_toolkit/1.0 (by draconicdragon on GitHub)"}
 
 # create a blank image tensor to use as a placeholder
-blank_img_tensor = torch.from_numpy(np.zeros((512, 512, 3), dtype=np.float32) / 255.0).unsqueeze(0)
+blank_img_tensor = torch.from_numpy(np.zeros((64, 64, 3), dtype=np.float32) / 255.0).unsqueeze(0)
 
 
 def get_e621_post_data(response, img_size):

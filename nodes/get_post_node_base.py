@@ -124,7 +124,7 @@ class BaseBooruNode:
     # DEPRECATED = True
     # BETA would be CATEGORY = "_for_testing"  or
     # EXPERIMENTAL = True
-    
+
     EXPERIMENTAL = True  # set to False in child class
 
     DESCRIPTION = "aaa"
@@ -233,7 +233,7 @@ class BaseBooruNode:
         # Exclude tags
         if self.ALLOW_EXCLUDE_TAGS and exclude_tags:
             exclude_list = [
-                tag.replace(" ", "_").replace("\\(", "(").replace("\\)", ")")
+                tag.strip().replace(" ", "_").replace("\\(", "(").replace("\\)", ")")
                 for tag in user_excluded_tags.replace(", ", ",").split(",")
             ]
             for key in tags_dict:
@@ -242,7 +242,8 @@ class BaseBooruNode:
         # Format tags
         if self.ALLOW_FORMAT_TAGS and format_tags:
             for key in tags_dict:
-                tags_dict[key] = adjust_tags(tags_dict[key])
+                if tags_dict[key]:
+                    tags_dict[key] = adjust_tags(tags_dict[key])
 
         # Append comma
         if self.ALLOW_APPEND_COMMA and append_comma:
@@ -256,6 +257,7 @@ class BaseBooruNode:
             tags_dict.get("character_tags", ""),
             tags_dict.get("copyright_tags", ""),
             tags_dict.get("artist_tags", ""),
+            # Will always be empty for DanbooruHandler, possibly futuer handlers too.
             tags_dict.get("species_tags", ""),
             scaled_img_width,
             scaled_img_height,

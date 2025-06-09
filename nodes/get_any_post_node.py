@@ -11,7 +11,8 @@ class AnyBooruPostAdvanced(BaseBooruNode):
         "Fetches a post from any booru service so long as the api response type is supported, such as e621/e6ai or Danbooru/aibooru.\n"
         "It is recommended to use the specific nodes for the service you are using so far one exists.\n"
         "Use this node as a last resort only. There may not be any outputs for character/artist/copyright tags "
-        "because it's possible the api response puts those tags as 'general' tags. Confirm the outputs if you use this node."
+        "because it's possible the service doesn't separate tags into their respective categories and bunches "
+        "them together into 'general' tags. Confirm the outputs if you use this node with a technically unsupported service url."
     )
 
     EXPERIMENTAL = False

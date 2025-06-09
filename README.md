@@ -2,7 +2,12 @@
 
 ### Nodes
 
-##### Fetch e621/Booru Post node
+#### Fetch e621/Booru Post node
+#### DEPRECATED, use "Get Booru Post (Any) Adv." now
+
+The old node will still work if its in the workflow but it's marked as deprecated and it may be removed in the future.  
+The `Get Booru Post (Any) Adv.` currently should work the exact same way besides 1-2 obvious changes.
+
 
 Gets the image, tags and original + scaled image dimensions from a given danbooru or e621 post url.
 ![Main fetch node showcase](./assets_gh/main_fetch_node_showcase.png)

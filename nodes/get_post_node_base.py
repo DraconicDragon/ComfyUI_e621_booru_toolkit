@@ -122,7 +122,8 @@ class BaseBooruNode:
     FUNCTION = "get_data"
 
     # DEPRECATED = True
-    # BETA would be CATEGORY = "_for_testing" idk maybe other way
+    # BETA would be CATEGORY = "_for_testing"  or
+    # EXPERIMENTAL = True
 
     DESCRIPTION = "aaa"
 

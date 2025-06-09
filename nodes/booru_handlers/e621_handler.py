@@ -13,10 +13,12 @@ class E621Handler(BooruHandlerBase):
         post = response.get("post", {})
         tags = post.get("tags", {})
 
+        # NOTE: e621 has contributor key in tags since 18th dec., not useful for image gen
         tags_dict = {
             "general_tags": ", ".join(tags.get("general", [])),
             "character_tags": ", ".join(tags.get("character", [])),
             "copyright_tags": ", ".join(tags.get("copyright", [])),
+            # "contributor_tags": ", ".join(tags.get("contributor", [])),
             "artist_tags": ", ".join(
                 tags.get("artist", []) if tags.get("artist") else tags.get("director", [])
             ),  # director is e6ai's 'artist'

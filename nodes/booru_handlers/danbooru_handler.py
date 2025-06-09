@@ -15,7 +15,7 @@ class DanbooruHandler(BooruHandlerBase):
             "character_tags": response.get("tag_string_character", "").replace(" ", ", "),
             "copyright_tags": response.get("tag_string_copyright", "").replace(" ", ", "),
             "artist_tags": response.get("tag_string_artist", "").replace(" ", ", "),
-            "model_tags": response.get("tag_string_model", "").replace(" ", ", "), # unused
+            "model_tags": response.get("tag_string_model", "").replace(" ", ", "), # aibooru, unused
             "species_tags": "",
         }
 

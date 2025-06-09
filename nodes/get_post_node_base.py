@@ -40,7 +40,7 @@ class BaseBooruNode:
         if cls.ALLOW_SERVICE_SELECT:
             inputs["required"]["api_type"] = (
                 ["auto", "e621/e6ai", "danbooru/aibooru"],
-                {"default": "auto", "tooltip": "Select booru api type"},
+                {"default": "auto", "tooltip": "Select booru api type. 'auto' should generally be OK to use"},
             )
         if cls.ALLOW_SCALE:
             inputs["required"]["scale_target_avg"] = (
@@ -50,7 +50,11 @@ class BaseBooruNode:
                     "min": 64,
                     "max": 16384,
                     "step": 64,
-                    "tooltip": "Target average dimension for scaling (SDXL: 1024)",
+                    "tooltip": (
+                        "Calculates the image's width and height so it's average is close to the "
+                        "scale_target_avg value while keeping the aspect ratio as close to original "
+                        "as possible and making the output dimensions multiples of 64"
+                    ),
                 },
             )
         inputs["required"]["img_size"] = (
@@ -62,7 +66,13 @@ class BaseBooruNode:
                 "sample",
                 "original",
             ],
-            {"default": "sample", "tooltip": "Image size variant"},
+            {
+                "default": "sample",
+                "tooltip": (
+                    "Select the image size variant to output through 'IMAGE'.\n"
+                    "Choose 'none' to output a blank image. For e6, anything below sample will be 'preview'"
+                ),
+            },
         )
         if cls.ALLOW_FORMAT_TAGS:
             inputs["required"]["format_tags"] = (
@@ -77,7 +87,7 @@ class BaseBooruNode:
                 "BOOLEAN",
                 {
                     "default": False,
-                    "tooltip": "Appends a comma to the last tag in each output.",
+                    "tooltip": "Appends a comma to the last tag in each output",
                 },  # todo: with or without extra space? not that it matters for CLIP but you never know
             )
         if cls.ALLOW_EXCLUDE_TAGS:
@@ -90,7 +100,7 @@ class BaseBooruNode:
                 {
                     "default": "conditional dnp, sound_warning, unknown_artist, third-party_edit, anonymous_artist, e621, e621 post recursion, e621_comment, patreon, patreon logo, patreon username, instagram username, text, dialogue",
                     "multiline": True,
-                    "tooltip": "Comma separated list of tags to exclude for output",
+                    "tooltip": "Comma separated list of tags to exclude for output (they can include underscores or spaces, with or without backslashes)",
                 },
             )
         return inputs

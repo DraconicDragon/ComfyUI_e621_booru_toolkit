@@ -40,7 +40,7 @@ def calculate_dimensions_for_diffusion(
     return int(new_width), int(new_height)
 
 
-def format_tags(tags: str) -> str:
+def adjust_tags(tags: str) -> str:
     """Removes underscores and escape parentheses."""
     return tags.replace("_", " ").replace("(", "\\(").replace(")", "\\)")
 

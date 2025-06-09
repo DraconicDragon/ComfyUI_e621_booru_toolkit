@@ -1,9 +1,9 @@
 import numpy as np
-import torch
-from PIL import Image
+import torch # type: ignore
+from PIL.Image import Image as PILImage
 
 
-def to_tensor(image: Image) -> torch.Tensor:
+def to_tensor(image: PILImage) -> torch.Tensor:
     """Converts a PIL Image to a PyTorch tensor with an added batch dimension as ComfyUI expects it."""
     return torch.from_numpy(np.array(image).astype(np.float32) / 255.0).unsqueeze(0)
 

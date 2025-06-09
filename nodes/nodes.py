@@ -2,7 +2,7 @@ import io
 
 import numpy as np
 import requests
-import torch
+import torch  # type: ignore
 from PIL import Image
 
 from ..nodes.utils import calculate_dimensions_for_diffusion, to_tensor
@@ -165,6 +165,7 @@ class GetBooruPost:
     )
     FUNCTION = "get_data"
     CATEGORY = "E621 Booru Toolkit"
+    DEPRECATED = True
 
     def get_data(self, url, scale_target_avg, img_size, format_tags, exclude_tags, user_excluded_tags):
         # Check if URL already ends with .json

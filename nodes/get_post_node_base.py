@@ -124,6 +124,8 @@ class BaseBooruNode:
     # DEPRECATED = True
     # BETA would be CATEGORY = "_for_testing"  or
     # EXPERIMENTAL = True
+    
+    EXPERIMENTAL = True  # set to False in child class
 
     DESCRIPTION = "aaa"
 

@@ -13,4 +13,7 @@ class AnyBooruPostAdvanced(BaseBooruNode):
         "Use this node as a last resort only. There may not be any outputs for character/artist/copyright tags "
         "because it's possible the api response puts those tags as 'general' tags. Confirm the outputs if you use this node."
     )
+
+    EXPERIMENTAL = False
+
     pass

@@ -11,7 +11,7 @@ NODE_CLASS_MAPPINGS = {
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "GetBooruPost": "[OLD] Fetch e621/Booru Post",
-    "GetAnyBooruPostAdv": "Get Booru Post Adv. (Any)",
+    "GetAnyBooruPostAdv": "[BETA] Get Booru Post Adv. (Any)", # todo: remove beta
     "TagWikiFetch": "[OLD] Tag Wiki Lookup",  # todo: i really need better names for these
 }
 

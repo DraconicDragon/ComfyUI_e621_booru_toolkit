@@ -1,3 +1,6 @@
+# repo-specific
+models/*
+
 # test
 test.py
 js/test.js

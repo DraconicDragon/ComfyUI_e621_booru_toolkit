@@ -4,17 +4,14 @@ from ..nodes.get_post_node_base import BaseBooruNode
 class AnyBooruPostAdvanced(BaseBooruNode):
     """
     A node for fetching posts from any supported booru service.
-    Inherits BaseBooruNode and doesn't change anything from it.
+    Inherits BaseBooruNode and provides access to all supported services.
     """
 
     DESCRIPTION = (
-        "Fetches a post from any booru service so long as the api response type is supported, such as e621/e6ai or Danbooru/aibooru.\n"
-        "It is recommended to use the specific nodes for the service you are using so far one exists.\n"
-        "Use this node as a last resort only. There may not be any outputs for character/artist/copyright tags "
-        "because it's possible the service doesn't separate tags into their respective categories and bunches "
-        "them together into 'general' tags. Confirm the outputs if you use this node with a technically unsupported service url."
+        "Fetches a post from any supported booru service with automatic detection or manual selection.\n"
+        "Supports e621/e6ai, Danbooru/Aibooru, and maybe more.\n"
+        "It is recommended to use the specific nodes for the service you are using for the best experience.\n"
+        "Use this node when you need flexibility to work with multiple different booru services, or just find it more convenient."
     )
 
     EXPERIMENTAL = False
-
-    pass

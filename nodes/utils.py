@@ -1,5 +1,5 @@
 import numpy as np
-import torch # type: ignore
+import torch
 from PIL.Image import Image as PILImage
 
 

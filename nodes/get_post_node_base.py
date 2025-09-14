@@ -1,34 +1,58 @@
 import io
 import logging
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 import requests
-import torch  # type: ignore
+import torch
 from PIL import Image
 
-from ..nodes.booru_handlers.danbooru_handler import DanbooruHandler
-from ..nodes.booru_handlers.e621_handler import E621Handler
+from ..nodes.booru_handlers.handler_registry import registry
 from ..nodes.utils import (
     adjust_tags,
-    calculate_dimensions_for_diffusion,
     exclude_tags_from_string,
     to_tensor,
 )
 
-BOORU_HANDLERS = {
-    "auto": [E621Handler(), DanbooruHandler()],  # Try in order
-    "e621/e6ai": [E621Handler()],
-    "danbooru/aibooru": [DanbooruHandler()],
-}
-
 
 class BaseBooruNode:
-    # may be overridden by child classes
-    ALLOW_SERVICE_SELECT = True
-    ALLOW_SCALE = True
+    """
+    Base class for all booru nodes.
+    Provides common functionality for fetching and processing booru posts.
+    """
+
+    # todo: make format_tags input a string to select which tag category to format/not format?
+    # may be overridden by child classes to customize behavior
     ALLOW_FORMAT_TAGS = True
-    ALLOW_APPEND_COMMA = True
+    ALLOW_TRAILING_COMMA = True
     ALLOW_EXCLUDE_TAGS = True
+    N_HANDLER_NAME = None  # Set this in subclasses, must match HANDLER_NAME of a handler
+    # todo: this could probably be better, since both this and HANDLER_NAME have to be the same for N_HANDLER_NAME to find HANDLER_NAME of a handler
+    # though then again idk right now how to make better so i just call this one N_HANDLER_NAME (N = Node) which is used to get a matching handler
+
+    CATEGORY = "Booru Toolkit/Posts"
+    FUNCTION = "get_data"
+
+    # Set to False in child classes when they are stable
+    EXPERIMENTAL = True
+
+    DESCRIPTION = "Base booru node for fetching posts from various booru services."
+
+    RETURN_INFO = {  # this way is just clearer for me
+        "IMAGE": "IMAGE",
+        "GENERAL_TAGS": "STRING",
+        "CHARACTER_TAGS": "STRING",
+        "CONTRIBUTOR_TAGS": "STRING",
+        "COPYRIGHT_TAGS": "STRING",
+        "ARTIST_TAGS": "STRING",
+        "SPECIES_TAGS": "STRING",
+        "META_TAGS": "STRING",
+        "MODEL_TAGS": "STRING",
+        "ORIGINAL_WIDTH": "INT",
+        "ORIGINAL_HEIGHT": "INT",
+    }
+    RETURN_TYPES = tuple(RETURN_INFO.values())
+    RETURN_NAMES = tuple(RETURN_INFO.keys())
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -37,26 +61,13 @@ class BaseBooruNode:
                 "url": ("STRING", {"multiline": False, "tooltip": "Enter the booru post URL"}),
             }
         }
-        if cls.ALLOW_SERVICE_SELECT:
+
+        if not cls.N_HANDLER_NAME:
             inputs["required"]["api_type"] = (
-                ["auto", "e621/e6ai", "danbooru/aibooru"],
+                registry.get_handler_choices(),
                 {"default": "auto", "tooltip": "Select booru api type. 'auto' should generally be OK to use"},
             )
-        if cls.ALLOW_SCALE:
-            inputs["required"]["scale_target_avg"] = (
-                "INT",
-                {
-                    "default": 1024,
-                    "min": 64,
-                    "max": 16384,
-                    "step": 64,
-                    "tooltip": (
-                        "Calculates the image's width and height so it's average is close to the "
-                        "scale_target_avg value while keeping the aspect ratio as close to original "
-                        "as possible and making the output dimensions multiples of 64"
-                    ),
-                },
-            )
+
         inputs["required"]["img_size"] = (
             [
                 "none - don't download image",
@@ -74,22 +85,25 @@ class BaseBooruNode:
                 ),
             },
         )
+
         if cls.ALLOW_FORMAT_TAGS:
             inputs["required"]["format_tags"] = (
                 "BOOLEAN",
                 {
                     "default": True,
                     "tooltip": "Format tags for prompt use. Removes underscores and adds backslashes to brackets",
-                },  # "" if cls.ALLOW_FORMAT_TAGS else "Disabled"
+                },
             )
-        if cls.ALLOW_APPEND_COMMA:
-            inputs["required"]["append_comma"] = (
+
+        if cls.ALLOW_TRAILING_COMMA:
+            inputs["required"]["trailing_comma"] = (
                 "BOOLEAN",
                 {
                     "default": False,
                     "tooltip": "Appends a comma to the last tag in each output",
-                },  # todo: with or without extra space? not that it matters for CLIP but you never know
+                },
             )
+
         if cls.ALLOW_EXCLUDE_TAGS:
             inputs["required"]["exclude_tags"] = (
                 "BOOLEAN",
@@ -103,133 +117,99 @@ class BaseBooruNode:
                     "tooltip": "Comma separated list of tags to exclude for output (they can include underscores or spaces, with or without backslashes)",
                 },
             )
+
         return inputs
-
-    RETURN_TYPES = ("IMAGE", "STRING", "STRING", "STRING", "STRING", "STRING", "INT", "INT", "INT", "INT")
-    RETURN_NAMES = (
-        "IMAGE",
-        "GENERAL_TAGS",
-        "CHARACTER_TAGS",
-        "COPYRIGHT_TAGS",
-        "ARTIST_TAGS",
-        "SPECIES_TAGS",
-        "SCALED_WIDTH",
-        "SCALED_HEIGHT",
-        "ORIGINAL_WIDTH",
-        "ORIGINAL_HEIGHT",
-    )
-    CATEGORY = "E621 Booru Toolkit/Posts"
-    FUNCTION = "get_data"
-
-    # DEPRECATED = True
-    # BETA would be CATEGORY = "_for_testing"  or
-    # EXPERIMENTAL = True
-
-    EXPERIMENTAL = True  # set to False in child class
-
-    DESCRIPTION = "aaa"
 
     def get_data(
         self,
-        url,
-        img_size,
-        scale_target_avg=1024,
-        format_tags=True,
-        append_comma=False,
-        exclude_tags=True,
-        user_excluded_tags="",
-        api_type="auto",
-    ):
+        url: str,
+        img_size: str,
+        format_tags: bool = True,
+        trailing_comma: bool = False,
+        exclude_tags: bool = True,
+        user_excluded_tags: str = "",
+        api_type: str = "auto",
+    ) -> Tuple:
+        """Main function to fetch and process booru data."""
         headers = {"User-Agent": "ComfyUI_e621_booru_toolkit/1.0 (by draconicdragon on GitHub)"}
         blank_img_tensor = torch.from_numpy(np.zeros((64, 64, 3), dtype=np.float32) / 255.0).unsqueeze(0)
 
-        # Select handler(s)
-        handlers = BOORU_HANDLERS.get(api_type, BOORU_HANDLERS["auto"])
-        tags_dict = {}
-        img_width = img_height = 0
-        image_url = None
+        # Raise error if URL is empty after trimming
+        if not url.strip():
+            raise ValueError("URL cannot be empty.")
 
-        # Try handlers in order (for auto)
-        last_error = None
-        for handler in handlers:
-            try:
-                response = handler.fetch(url, img_size, headers)
+        # Determine which handler to use
+        # todo: this fails when theres a domain that isnt added
+        # todo: might not be desirable when theres a domain with supported api format, yet errors because domain isnt hardcoded in handler
+        # todo: allow adding custom domains? in some config file?
+        # todo: or have a "brute force" mode that goes through every handler. Or can add both ig
+        # NOTE: the todos above only apply to the any node, image board specific nodes will try to fetch and parse regardless of domain
+        handler = self._get_handler(url, api_type)
+        if not handler:
+            raise ValueError(f"No suitable handler found for URL: {url}")
+        try:
+            # Fetch and parse data
+            response = handler.fetch(url, img_size, headers)
+            tags_dict, img_width, img_height, image_url = handler.parse(response, img_size)
 
-                # todo: maybe move validation to handlers
-                # Validate response format before parsing
-                if isinstance(handler, E621Handler):
-                    # E621/E6AI: expect dict with top-level "Post" key, and tags as lists
-                    if not (isinstance(response, dict) and "post" in response):
-                        raise ValueError("Response does not match E621/E6AI format (no top-level 'Post' key).")
-                    tags = response["post"].get("tags", {})
-                    if not isinstance(tags, dict) or not all(isinstance(v, list) for v in tags.values()):
-                        raise ValueError("E621/E6AI tags are not lists as expected.")
+            logging.info(f"Successfully fetched data using {handler.HANDLER_NAME} handler")
 
-                elif isinstance(handler, DanbooruHandler):
-                    # Danbooru/Aibooru: expect dict with tag_string_* keys as strings
-                    if not (isinstance(response, dict) and "tag_string_general" in response):
-                        raise ValueError("Response does not match Danbooru/Aibooru format (no 'tag_string_general').")
+        except Exception as e:
+            logging.error(f"Failed to fetch data: {e}")
+            raise ValueError(f"Failed to fetch data: {e}")
 
-                    if not all(
-                        isinstance(response.get(k, ""), str)
-                        for k in [
-                            "tag_string_general",
-                            "tag_string_character",
-                            "tag_string_copyright",
-                            "tag_string_artist",
-                        ]
-                    ):
-                        raise ValueError("Danbooru/Aibooru tag strings in API response are not strings as expected.")
+        # Download image
+        img_tensor = self._download_image(image_url, img_size, blank_img_tensor)
 
-                else:
-                    raise ValueError(f"Unknown handler type: {handler.__class__.__name__}")
+        # Process tags
+        tags_dict = self._process_tags(tags_dict, exclude_tags, user_excluded_tags, format_tags, trailing_comma)
 
-                tags_dict, img_width, img_height, image_url = handler.parse(response, img_size)
-                print(f"Using handler: {handler.__class__.__name__} for API type: {api_type}")
-                print(f"Fetching data from URL: {url} with image size: {img_size}")
+        # Build return tuple dynamically based on the class's RETURN_NAMES
+        return self._build_return_tuple(img_tensor, tags_dict, img_width, img_height)
 
-                if tags_dict and (img_width or img_height):
-                    break
-            except Exception as e:
-                last_error = e
-                continue
+    def _get_handler(self, url: str, api_type: str):
+        """Get the appropriate handler for the URL and API type."""
+        # If this node forces a specific API type, use that
+        if self.N_HANDLER_NAME:
+            return registry.get_handler_by_name(self.N_HANDLER_NAME)
 
-        if (not image_url or img_width == 0 or img_height == 0) and not img_size == "none - don't download image":
-            raise ValueError(
-                f"No valid image found for the given URL with the selected API type ({api_type}). "
-                f"Check if the URL matches the API type, or try 'auto' mode.\n"
-                # f"API Response: \n{response if 'response' in locals() else 'No response available'}\n"
-                f"Last error: {last_error}"
-            )
+        # If auto mode, try to detect from URL
+        if api_type == "auto":
+            return registry.get_handler_for_url(url)
 
-        # Image download
+        # Otherwise, use the specified handler
+        return registry.get_handler_by_name(api_type)
+
+    def _download_image(self, image_url: Optional[str], img_size: str, blank_img_tensor: torch.Tensor) -> torch.Tensor:
+        """Download and process the image."""
         if img_size == "none - don't download image" or not image_url:
-            img_tensor = blank_img_tensor
-        else:
-            try:
-                img_data = requests.get(image_url, timeout=10)
-                img_data.raise_for_status()
-                img_stream = io.BytesIO(img_data.content)
-                image_ = Image.open(img_stream)
-                img_tensor = to_tensor(image_)
-            except requests.RequestException as req_exc:
-                logging.error(f"Image download failed: {req_exc}")
-                img_tensor = blank_img_tensor
-            except (OSError, ValueError) as img_exc:
-                logging.error(f"Image processing failed: {img_exc}")
-                img_tensor = blank_img_tensor
-            except Exception as exc:
-                logging.error(f"Unexpected error: {exc}")
-                img_tensor = blank_img_tensor
+            return blank_img_tensor
 
-        # Scale
-        # print(f"Original image dimensions: {img_width}x{img_height}")
-        scaled_img_width, scaled_img_height = (
-            calculate_dimensions_for_diffusion(img_width, img_height, scale_target_avg)
-            if self.ALLOW_SCALE
-            else (img_width, img_height)
-        )
+        try:
+            img_data = requests.get(image_url, timeout=10)
+            img_data.raise_for_status()
+            img_stream = io.BytesIO(img_data.content)
+            image_ = Image.open(img_stream)
+            return to_tensor(image_)
+        except requests.RequestException as req_exc:
+            logging.error(f"Image download failed: {req_exc}")
+            return blank_img_tensor
+        except (OSError, ValueError) as img_exc:
+            logging.error(f"Image processing failed: {img_exc}")
+            return blank_img_tensor
+        except Exception as exc:
+            logging.error(f"Unexpected error during image download: {exc}")
+            return blank_img_tensor
 
+    def _process_tags(
+        self,
+        tags_dict: Dict[str, str],
+        exclude_tags: bool,
+        user_excluded_tags: str,
+        format_tags: bool,
+        trailing_comma: bool,
+    ) -> Dict[str, str]:
+        """Process tags according to user preferences."""
         # Exclude tags
         if self.ALLOW_EXCLUDE_TAGS and exclude_tags:
             exclude_list = [
@@ -246,21 +226,40 @@ class BaseBooruNode:
                     tags_dict[key] = adjust_tags(tags_dict[key])
 
         # Append comma
-        if self.ALLOW_APPEND_COMMA and append_comma:
+        if self.ALLOW_TRAILING_COMMA and trailing_comma:
             for key in tags_dict:
                 if tags_dict[key]:
                     tags_dict[key] += ","
 
-        return (
-            img_tensor,
-            tags_dict.get("general_tags", ""),
-            tags_dict.get("character_tags", ""),
-            tags_dict.get("copyright_tags", ""),
-            tags_dict.get("artist_tags", ""),
-            # Will always be empty for DanbooruHandler, possibly futuer handlers too.
-            tags_dict.get("species_tags", ""),
-            scaled_img_width,
-            scaled_img_height,
-            img_width,
-            img_height,
-        )
+        return tags_dict
+
+    def _build_return_tuple(
+        self, img_tensor: torch.Tensor, tags_dict: Dict[str, str], img_width: int, img_height: int
+    ) -> Tuple:
+        """
+        Build return tuple dynamically based on the class's RETURN_NAMES.
+
+        This allows child classes to define their own return/output structure.
+        """
+        # non-tag category values
+        special_values = {
+            "IMAGE": img_tensor,
+            "ORIGINAL_WIDTH": img_width,
+            "ORIGINAL_HEIGHT": img_height,
+        }
+
+        # Build return tuple based on this class's RETURN_NAMES
+        return_values = []
+        for return_name in self.RETURN_NAMES:
+            if return_name in special_values:
+                return_values.append(special_values[return_name])
+            elif return_name.endswith("_TAGS"):
+                # Convert RETURN_NAME to tags_dict key (e.g., "GENERAL_TAGS" -> "general_tags")
+                tags_key = return_name.lower()
+                return_values.append(tags_dict.get(tags_key, ""))
+            else:
+                # Fallback for unknown return types
+                logging.warning(f"Unknown return type '{return_name}' in {self.__class__.__name__}")
+                return_values.append("")
+
+        return tuple(return_values)

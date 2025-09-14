@@ -8,6 +8,16 @@ def to_tensor(image: PILImage) -> torch.Tensor:
     return torch.from_numpy(np.array(image).astype(np.float32) / 255.0).unsqueeze(0)
 
 
+def adjust_tags(tags: str) -> str:
+    """Removes underscores and escape parentheses."""
+    return tags.replace("_", " ").replace("(", "\\(").replace(")", "\\)")
+
+
+def exclude_tags_from_string(tags: str, exclude_list) -> str:
+    """Excludes specified tags from the tag string."""
+    return ", ".join([tag for tag in tags.split(", ") if tag not in exclude_list])
+
+
 def calculate_dimensions_for_diffusion(
     img_width: int, img_height: int, scale_target_avg: int, multiples_of: int = 64
 ) -> tuple:
@@ -38,13 +48,3 @@ def calculate_dimensions_for_diffusion(
     new_height = (new_height // multiples_of) * multiples_of
 
     return int(new_width), int(new_height)
-
-
-def adjust_tags(tags: str) -> str:
-    """Removes underscores and escape parentheses."""
-    return tags.replace("_", " ").replace("(", "\\(").replace(")", "\\)")
-
-
-def exclude_tags_from_string(tags: str, exclude_list) -> str:
-    """Excludes specified tags from the tag string."""
-    return ", ".join([tag for tag in tags.split(", ") if tag not in exclude_list])

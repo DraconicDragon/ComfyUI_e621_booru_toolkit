@@ -1,3 +1,4 @@
+import logging
 import os
 
 import numpy as np
@@ -39,9 +40,11 @@ class PixAITaggerNode:
                 f"Model directory not found at {model_dir}. Please ensure the 'models' folder with model files exists. If it doesn't, create it."
             )
 
-        print(f"PixAI Tagger: Loading model from: {model_dir}")
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        logging.info(f"PixAI Tagger: Model will be loaded onto device: {device.upper()}")
+        logging.info(f"PixAI Tagger: Loading model from: {model_dir}")
         self.handler = EndpointHandler(path=model_dir)
-        print(f"PixAI Tagger: Model loaded successfully on device: {self.handler.device.upper()}")
+        logging.info(f"PixAI Tagger: Model loaded successfully on device: {self.handler.device.upper()}")
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -81,9 +84,17 @@ class PixAITaggerNode:
         character_tags_list = sorted(predicted_tags.get("character", []))
         ip_tags_list = sorted(predicted_tags.get("ip", []))
 
-        # Replace underscores with spaces for better readability in prompts
+        # Replace underscores with spaces
+        # todo: make optional
+
+        # todo: use logic from utils
         general_tags = ", ".join(tag.replace("_", " ") for tag in general_tags_list)
         character_tags = ", ".join(tag.replace("_", " ") for tag in character_tags_list)
         ip_tags = ", ".join(tag.replace("_", " ") for tag in ip_tags_list)
+
+        # Replace parenthesises with escaped versions
+        general_tags = general_tags.replace("(", "\\(").replace(")", "\\)")
+        character_tags = character_tags.replace("(", "\\(").replace(")", "\\)")
+        ip_tags = ip_tags.replace("(", "\\(").replace(")", "\\)")
 
         return (general_tags, character_tags, ip_tags)

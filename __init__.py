@@ -1,12 +1,12 @@
-from .nodes.get_aibooru_post_node import AIBooruPostNode
-from .nodes.get_any_post_node import AnyBooruPostAdvanced
-from .nodes.get_danbooru_post_node import DanbooruPostNode
-from .nodes.get_e621_post_node import E621PostNode
+from .nodes.booru_posts.get_aibooru_post_node import AIBooruPostNode
+from .nodes.booru_posts.get_any_post_node import AnyBooruPostAdvanced
+from .nodes.booru_posts.get_danbooru_post_node import DanbooruPostNode
+from .nodes.booru_posts.get_e621_post_node import E621PostNode
 
 # from .nodes.get_gelbooru_post_node import GelbooruPostNode
-from .nodes.old_nodes import GetBooruPost
+from .nodes.booru_posts.old_nodes import GetBooruPost
+from .nodes.misc.wiki_fetch_node import TagWikiFetch
 from .nodes.tagging.pixai_tagger_node import PixAITaggerNode
-from .nodes.wiki_fetch_node import TagWikiFetch
 from .pyserver import get_tag_wiki_data  # noqa: F401
 
 NODE_CLASS_MAPPINGS = {

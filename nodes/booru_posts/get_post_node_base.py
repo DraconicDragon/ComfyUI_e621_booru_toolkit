@@ -7,8 +7,8 @@ import requests
 import torch
 from PIL import Image
 
-from ..nodes.booru_handlers.handler_registry import registry
-from ..nodes.utils import (
+from ..booru_posts.booru_post_handlers.handler_registry import registry
+from ..misc.utils import (
     adjust_tags,
     exclude_tags_from_string,
     to_tensor,

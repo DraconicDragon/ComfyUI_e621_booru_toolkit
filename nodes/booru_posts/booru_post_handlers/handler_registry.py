@@ -4,7 +4,7 @@ import os
 import pkgutil
 from typing import Dict, List, Optional, Type
 
-from ..booru_handlers.handler_base import BooruHandlerBase
+from ..booru_post_handlers.handler_base import BooruHandlerBase
 
 
 class HandlerRegistry:

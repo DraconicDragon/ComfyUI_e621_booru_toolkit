@@ -5,7 +5,7 @@ import requests
 import torch  # type: ignore
 from PIL import Image
 
-from .utils import calculate_dimensions_for_diffusion, to_tensor
+from ..misc.utils import calculate_dimensions_for_diffusion, to_tensor
 
 headers = {"User-Agent": "ComfyUI_e621_booru_toolkit/1.0 (by draconicdragon on GitHub)"}
 

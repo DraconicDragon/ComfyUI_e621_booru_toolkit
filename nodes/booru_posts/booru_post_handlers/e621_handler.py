@@ -1,6 +1,6 @@
 from typing import Dict, Optional, Tuple
 
-from ..booru_handlers.handler_base import BooruHandlerBase
+from ..booru_post_handlers.handler_base import BooruHandlerBase
 
 
 class E621Handler(BooruHandlerBase):

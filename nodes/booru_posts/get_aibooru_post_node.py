@@ -1,4 +1,4 @@
-from ..nodes.get_post_node_base import BaseBooruNode
+from ..booru_posts.get_post_node_base import BaseBooruNode
 
 
 class AIBooruPostNode(BaseBooruNode):

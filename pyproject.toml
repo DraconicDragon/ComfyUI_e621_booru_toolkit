@@ -3,7 +3,7 @@ name = "e621_booru_toolkit"
 description = "WIP. Nodes: Fetch e621/danbooru image and/or tags etc from a given URL; Get the Wiki entry for a tag through a button press."
 version = "0.2.0"
 license = { file = "LICENSE" }
-dependencies = ["requests"]
+dependencies = ["requests", "pillow"]
 
 [project.urls]
 Repository = "https://github.com/DraconicDragon/ComfyUI_e621_booru_toolkit"

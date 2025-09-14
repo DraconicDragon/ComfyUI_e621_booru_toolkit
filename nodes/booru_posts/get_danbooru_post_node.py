@@ -6,7 +6,7 @@ class DanbooruPostNode(BaseBooruNode):
     A node specifically for fetching posts from Danbooru.
     """
 
-    N_HANDLER_NAME = "anbooru"  # This should match the HANDLER_NAME so it can find the correct handler
+    N_HANDLER_NAME = "Danbooru"  # This should match the HANDLER_NAME so it can find the correct handler
 
     EXPERIMENTAL = False
 

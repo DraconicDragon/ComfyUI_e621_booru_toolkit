@@ -36,10 +36,10 @@ class GelbooruHandler(BooruHandlerBase):
 
         # Handle different response formats between gelbooru and safebooru
         if isinstance(response, list) and len(response) > 0:
-            # Safebooru returns an array directly
+            # Safebooru returns an array directly (gelbooru version 0.2.0 or so i guess)
             post = response[0]
         elif "post" in response:
-            # Gelbooru wraps in a "post" key
+            # Gelbooru wraps in a "post" key (gelbooru version 0.2.5)
             post = response.get("post", [{}])[0] if isinstance(response.get("post"), list) else response.get("post", {})
         else:
             # Fallback for other formats

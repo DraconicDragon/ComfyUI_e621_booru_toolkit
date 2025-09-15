@@ -5,13 +5,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-# This import assumes your folder structure is similar to what's described in the instructions.
-# The original handler.py should be saved as pixai_tagger_pth.py in the specified sub-directory.
-try:
-    from .inference.pixai_tagger_pth import EndpointHandler
-except ImportError:
-    # Fallback for a flatter directory structure if the above fails
-    from handler import EndpointHandler
+from .inference.pixai_tagger_pth import EndpointHandler
 
 
 class PixAITaggerNode:

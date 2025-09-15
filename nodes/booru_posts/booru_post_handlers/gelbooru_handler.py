@@ -44,7 +44,7 @@ class GelbooruHandler(BooruHandlerBase):
             if img_size == "original":
                 image_url = post.get("file_url")
             elif img_size == "sample":
-                image_url = post.get("preview_url") or post.get("file_url")
+                image_url = post.get("sample_url") or post.get("file_url")
             else:  # preview or other sizes
                 image_url = post.get("preview_url") or post.get("file_url")
 

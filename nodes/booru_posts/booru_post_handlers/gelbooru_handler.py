@@ -10,6 +10,7 @@ class GelbooruHandler(BooruHandlerBase):
     SUPPORTED_DOMAINS = ["gelbooru.com", "safebooru.org"]
     HANDLER_NAME = "Gelbooru"
 
+    # todo: improve
     @classmethod
     def get_api_url(cls, url: str) -> str:
         """Convert Gelbooru post URL to API URL."""
@@ -22,13 +23,27 @@ class GelbooruHandler(BooruHandlerBase):
             if api_key and user_id:
                 return f"https://gelbooru.com/index.php?page=dapi&s=post&q=index&id={post_id}&json=1&api_key={api_key}&user_id={user_id}"
             return f"https://gelbooru.com/index.php?page=dapi&s=post&q=index&id={post_id}&json=1"
+
             # todo: thanks to UK spamming gelbooru with 10k requests per sec it now requires user id and api key added to query
+
+        elif "safebooru.org" in url and "id=" in url:
+            post_id = url.split("id=")[1].split("&")[0]
+            return f"https://safebooru.org/index.php?page=dapi&s=post&q=index&id={post_id}&json=1"
         return url
 
     def parse(self, response: Dict, img_size: str) -> Tuple[Dict[str, str], int, int, Optional[str]]:
         """Parse Gelbooru API response."""
 
-        post = response.get("post", [{}])[0] if isinstance(response.get("post"), list) else response.get("post", {})
+        # Handle different response formats between gelbooru and safebooru
+        if isinstance(response, list) and len(response) > 0:
+            # Safebooru returns an array directly
+            post = response[0]
+        elif "post" in response:
+            # Gelbooru wraps in a "post" key
+            post = response.get("post", [{}])[0] if isinstance(response.get("post"), list) else response.get("post", {})
+        else:
+            # Fallback for other formats
+            post = response
 
         # Gelbooru does not put tags into separate categories in api response
         # todo: either filter out tags with tags list or try to scrape site

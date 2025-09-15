@@ -21,7 +21,10 @@ from ..misc.utils import (
 # and we also assume its not set in SUPPORTED_DOMAINS of E621Handler:
 # if mode is not "auto" and instead its set to e621 (like when e621postnode is used)
 # then itll ignore SUPPORTED_DOMAINS and WILL make the request to e926 and WILL try to parse it, where auto would say no and not do it
-# in this case e926 will work with no issues,
+# in this case e926 will work with no issues
+# todo: consideration is to make it work in auto mode too, so instead of erroring when no match,
+# todo: it just tries every handler's parse() in order; this is for when the response json is the same as another site's
+# but it doesnt do that right now, could probably remove SUPPORTED_DOMAINS then, idk too tire
 
 
 class BaseBooruNode:

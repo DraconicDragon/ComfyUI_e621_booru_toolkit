@@ -2,8 +2,7 @@ from .nodes.booru_posts.get_aibooru_post_node import AIBooruPostNode
 from .nodes.booru_posts.get_any_post_node import AnyBooruPostAdvanced
 from .nodes.booru_posts.get_danbooru_post_node import DanbooruPostNode
 from .nodes.booru_posts.get_e621_post_node import E621PostNode
-
-# from .nodes.get_gelbooru_post_node import GelbooruPostNode
+from .nodes.booru_posts.get_gelbooru_post_node import GelbooruPostNode
 from .nodes.booru_posts.old_nodes import GetBooruPost
 from .nodes.misc.wiki_fetch_node import TagWikiFetch
 from .nodes.tagging.pixai_tagger_node import PixAITaggerNode
@@ -15,7 +14,7 @@ NODE_CLASS_MAPPINGS = {
     "GetAIBooruPost": AIBooruPostNode,
     "GetDanbooruPost": DanbooruPostNode,
     "GetE621Post": E621PostNode,
-    # "GetGelbooruPost": GelbooruPostNode,
+    "GetGelbooruPost": GelbooruPostNode,
     "TagWikiFetch": TagWikiFetch,
     # tagging
     "BTK_PixAITaggerNode": PixAITaggerNode,
@@ -27,7 +26,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "GetAIBooruPost": "Get AIBooru Post",
     "GetDanbooruPost": "Get Danbooru Post",
     "GetE621Post": "Get e621/e6ai Post",
-    # "GetGelbooruPost": "Get Gelbooru Post",
+    "GetGelbooruPost": "Get Gelbooru Post",
     "TagWikiFetch": "[OLD] Tag Wiki Lookup",
     # tagging
     "BTK_PixAITaggerNode": "PixAI Tagger v0.9",

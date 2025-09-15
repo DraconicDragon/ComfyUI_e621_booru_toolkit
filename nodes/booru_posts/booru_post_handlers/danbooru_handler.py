@@ -6,6 +6,7 @@ from ..booru_post_handlers.handler_base import BooruHandlerBase
 class DanbooruHandler(BooruHandlerBase):
     """Handler for Danbooru APIs."""
 
+    # NOTE: safebooru.donmai.us is NOT safebooru.org
     SUPPORTED_DOMAINS = ["danbooru.donmai.us", "safebooru.donmai.us", "donmai.moe"]
     HANDLER_NAME = "Danbooru"
 

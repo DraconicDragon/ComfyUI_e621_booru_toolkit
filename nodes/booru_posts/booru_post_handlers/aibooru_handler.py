@@ -30,8 +30,11 @@ class AIBooruHandler(BooruHandlerBase):
             selected = next((v for v in variants if v["type"] == img_size), None)
             image_url = selected["url"] if selected else response.get("file_url")
             # aibooru doesn't put https: in front of the urls but does //
-            if image_url and image_url.startswith("//"):
-                image_url = "https:" + image_url
+            if image_url:
+                if image_url.startswith("//"):
+                    image_url = "https:" + image_url
+                elif not image_url.startswith("http"):
+                    logging.warning(f"AIBooru image URL missing scheme: {image_url}")
             else:
                 logging.warning(f"Unexpected image URL format from AIBooru? URL: {image_url}")
 

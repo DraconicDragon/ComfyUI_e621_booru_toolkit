@@ -96,26 +96,20 @@ def pil_to_rgb(image: Image.Image) -> Image.Image:
 
 
 class EndpointHandler:
-    def __init__(self, path: str):
-        repo_path = Path(path)
-        assert repo_path.is_dir(), f"Model directory not found: {repo_path}"
+    def __init__(self, weights_file: str, tags_file: str, mapping_file: str):
+        weights_path = Path(weights_file)
+        tags_path = Path(tags_file)
+        mapping_path = Path(mapping_file)
 
-        weights_files = list(repo_path.glob("*model_v0.9.pth"))
-        if not weights_files:
-            raise FileNotFoundError(f"No model file ending with 'model_v0.9.pth' found in: {repo_path}")
-        weights_file = weights_files[0]  # Use the first match
-
-        tags_file = repo_path / "tags_v0.9_13k.json"
-        mapping_file = repo_path / "char_ip_map.json"
-        if not weights_file.exists():
-            raise FileNotFoundError(f"Model file not found: {weights_file}")
-        if not tags_file.exists():
-            raise FileNotFoundError(f"Tags file not found: {tags_file}")
-        if not mapping_file.exists():
-            raise FileNotFoundError(f"Mapping file not found: {mapping_file}")
+        if not weights_path.exists():
+            raise FileNotFoundError(f"Model file not found: {weights_path}")
+        if not tags_path.exists():
+            raise FileNotFoundError(f"Tags file not found: {tags_path}")
+        if not mapping_path.exists():
+            raise FileNotFoundError(f"Mapping file not found: {mapping_path}")
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.model = load_model(str(weights_file), self.device)
+        self.model = load_model(str(weights_path), self.device)
         self.transform = transforms.Compose(
             [
                 transforms.Resize((448, 448)),
@@ -127,12 +121,9 @@ class EndpointHandler:
         self.default_general_threshold = 0.3
         self.default_character_threshold = 0.85
 
-        tag_map, self.gen_tag_count, self.character_tag_count = get_tags(tags_file)
-
-        # Invert the tag_map for efficient index-to-tag lookups
+        tag_map, self.gen_tag_count, self.character_tag_count = get_tags(tags_path)
         self.index_to_tag_map = {v: k for k, v in tag_map.items()}
-
-        self.character_ip_mapping = get_character_ip_mapping(mapping_file)
+        self.character_ip_mapping = get_character_ip_mapping(mapping_path)
 
     def __call__(self, data: dict[str, Any]) -> dict[str, Any]:
         inputs = data.pop("inputs", data)

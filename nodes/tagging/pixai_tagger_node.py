@@ -9,41 +9,55 @@ from .inference.pixai_tagger_pth import EndpointHandler
 
 
 class PixAITaggerNode:
+    MODELS_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "models"))
+
+    @classmethod
+    def scan_models(cls):
+        models = []
+        if not os.path.isdir(cls.MODELS_DIR):
+            logging.warning(f"Models directory not found: {cls.MODELS_DIR}")
+            return models
+        for folder in os.listdir(cls.MODELS_DIR):
+            folder_path = os.path.join(cls.MODELS_DIR, folder)
+            if not os.path.isdir(folder_path):
+                continue
+            # Look for .pth file, tags json, and mapping json
+            weights = None
+            tags = None
+            mapping = None
+            for f in os.listdir(folder_path):
+                if f.lower().endswith((".pth", ".safetensors")):
+                    weights = f
+                elif f.lower().startswith("tags_") and f.lower().endswith(".json"):
+                    tags = f
+                elif f.lower().startswith("char_ip_map") and f.lower().endswith(".json"):
+                    mapping = f
+            if weights and tags and mapping:
+                # Show as folder/model.pth
+                models.append(
+                    {
+                        "label": f"{folder}/{weights}",
+                        "weights": os.path.join(folder_path, weights),
+                        "tags": os.path.join(folder_path, tags),
+                        "mapping": os.path.join(folder_path, mapping),
+                    }
+                )
+        return models
+
     """
     A ComfyUI node that uses the PixAI Tagger model to generate general,
-    character, and IP tags for a given image.
+    character, and IP/copyright/franchise tags for a given image.
     """
 
-    def __init__(self):
-        # current dir of this script
-        current_dir = os.path.dirname(os.path.realpath(__file__))
-
-        # Try both hyphen and underscore versions of the model directory
-        model_dir_hyphen = os.path.normpath(os.path.join(current_dir, "..", "..", "models", "pixai-tagger-v0.9"))
-        model_dir_underscore = os.path.normpath(os.path.join(current_dir, "..", "..", "models", "pixai_tagger_v0.9"))
-
-        if os.path.isdir(model_dir_hyphen):
-            model_dir = model_dir_hyphen
-        elif os.path.isdir(model_dir_underscore):
-            model_dir = model_dir_underscore
-        else:
-            model_dir = model_dir_hyphen
-
-        if not os.path.isdir(model_dir):
-            raise FileNotFoundError(
-                f"Model directory not found at {model_dir}. Please ensure the 'models' folder with model files exists. If it doesn't, create it."
-            )
-
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        logging.info(f"PixAI Tagger: Model will be loaded onto device: {device.upper()}")
-        logging.info(f"PixAI Tagger: Loading model from: {model_dir}")
-        self.handler = EndpointHandler(path=model_dir)
-        logging.info(f"PixAI Tagger: Model loaded successfully on device: {self.handler.device.upper()}")
+    _handler_cache = {}
 
     @classmethod
     def INPUT_TYPES(cls):
+        models = cls.scan_models()
+        model_choices = [m["label"] for m in models] if models else ["No valid models found"]
         return {
             "required": {
+                "model": (model_choices,),
                 "image": ("IMAGE",),
                 "general_threshold": ("FLOAT", {"default": 0.35, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "character_threshold": ("FLOAT", {"default": 0.85, "min": 0.0, "max": 1.0, "step": 0.01}),
@@ -55,7 +69,27 @@ class PixAITaggerNode:
     FUNCTION = "tag_image"
     CATEGORY = "Tagging"
 
-    def tag_image(self, image: torch.Tensor, general_threshold: float, character_threshold: float):
+    def tag_image(self, model: str, image: torch.Tensor, general_threshold: float, character_threshold: float):
+        # Find model info from scanned models
+        models = self.scan_models()
+        model_info = next((m for m in models if m["label"] == model), None)
+        if not model_info:
+            logging.error(f"Selected model '{model}' not found in available models.")
+            return ("", "", "")
+
+        cache_key = model_info["weights"]
+        handler = self._handler_cache.get(cache_key)
+        if handler is None:
+            try:
+                handler = EndpointHandler(
+                    weights_file=model_info["weights"], tags_file=model_info["tags"], mapping_file=model_info["mapping"]
+                )
+                self._handler_cache[cache_key] = handler
+                logging.info(f"Loaded model handler for {model}")
+            except Exception as e:
+                logging.error(f"Failed to load model handler for {model}: {e}")
+                return ("", "", "")
+
         # 1. Convert the input tensor (shape: BHWC) to a PIL Image (first one in batch)
         img_tensor = image[0]
         i = 255.0 * img_tensor.cpu().numpy()
@@ -71,7 +105,7 @@ class PixAITaggerNode:
         }
 
         # 3. Run inference using the handler
-        predicted_tags = self.handler(data)
+        predicted_tags = handler(data)
 
         # 4. Format the output tags into comma-separated strings
         general_tags_list = sorted(predicted_tags.get("feature", []))

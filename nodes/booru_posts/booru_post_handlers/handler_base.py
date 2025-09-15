@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple, Union
+from urllib.parse import urlparse
 
 import requests
 
@@ -19,7 +20,9 @@ class BooruHandlerBase(ABC):
     @classmethod
     def can_handle(cls, url: str) -> bool:
         """Check if this handler can process the given URL."""
-        return any(domain in url.lower() for domain in cls.SUPPORTED_DOMAINS)
+        host = urlparse(url).hostname or ""
+        host = host.lower()
+        return any(host == d or host.endswith("." + d) for d in cls.SUPPORTED_DOMAINS)
 
     @classmethod
     def get_api_url(cls, url: str) -> str:

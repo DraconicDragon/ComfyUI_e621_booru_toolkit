@@ -6,7 +6,8 @@ from .handler_base import BooruHandlerBase
 class GelbooruHandler(BooruHandlerBase):
     """Handler for Gelbooru API."""
 
-    SUPPORTED_DOMAINS = ["gelbooru.com"]
+    # safebooru.org is a gelbooru fork, unrelated to safebooru.donmai.us
+    SUPPORTED_DOMAINS = ["gelbooru.com", "safebooru.org"]
     HANDLER_NAME = "Gelbooru"
 
     @classmethod

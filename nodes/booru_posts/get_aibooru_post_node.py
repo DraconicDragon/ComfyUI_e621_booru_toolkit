@@ -1,3 +1,4 @@
+from ..booru_posts.booru_post_handlers.aibooru_handler import AIBooruHandler
 from ..booru_posts.get_post_node_base import BaseBooruNode
 
 
@@ -6,7 +7,7 @@ class AIBooruPostNode(BaseBooruNode):
     A node specifically for fetching posts from AIBooru.
     """
 
-    N_HANDLER_NAME = "AIBooru"  # This should match the HANDLER_NAME so it can find the correct handler
+    HANDLER_CLASS = AIBooruHandler
 
     EXPERIMENTAL = False
 

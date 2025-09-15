@@ -1,3 +1,4 @@
+from ..booru_posts.booru_post_handlers.danbooru_handler import DanbooruHandler
 from ..booru_posts.get_post_node_base import BaseBooruNode
 
 
@@ -6,7 +7,7 @@ class DanbooruPostNode(BaseBooruNode):
     A node specifically for fetching posts from Danbooru.
     """
 
-    N_HANDLER_NAME = "Danbooru"  # This should match the HANDLER_NAME so it can find the correct handler
+    HANDLER_CLASS = DanbooruHandler
 
     EXPERIMENTAL = False
 

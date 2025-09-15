@@ -15,6 +15,15 @@ from ..misc.utils import (
 )
 
 
+
+# todo: so basically when request comes in for auto mode it checks every handler for SUPPORTED_DOMAINS
+# and then picks the first one that matches, but when no match, it errors; for this now we assume e926.net url 
+# and we also assume its not set in SUPPORTED_DOMAINS of E621Handler:
+# if mode is not "auto" and instead its set to e621 (like when e621postnode is used)
+# then itll ignore SUPPORTED_DOMAINS and WILL make the request to e926 and WILL try to parse it, where auto would say no and not do it
+# in this case e926 will work with no issues,
+
+
 class BaseBooruNode:
     """
     Base class for all booru nodes.
@@ -26,9 +35,8 @@ class BaseBooruNode:
     ALLOW_FORMAT_TAGS = True
     ALLOW_TRAILING_COMMA = True
     ALLOW_EXCLUDE_TAGS = True
-    N_HANDLER_NAME = None  # Set this in subclasses, must match HANDLER_NAME of a handler
-    # todo: this could probably be better, since both this and HANDLER_NAME have to be the same for N_HANDLER_NAME to find HANDLER_NAME of a handler
-    # though then again idk right now how to make better so i just call this one N_HANDLER_NAME (N = Node) which is used to get a matching handler
+    # point directly to a handler class (e.g. DanbooruHandler)
+    HANDLER_CLASS = None
 
     CATEGORY = "Booru Toolkit/Posts"
     FUNCTION = "get_data"
@@ -62,7 +70,8 @@ class BaseBooruNode:
             }
         }
 
-        if not cls.N_HANDLER_NAME:
+        # Only expose api_type chooser if this node doesn't pin to specific handler
+        if not getattr(cls, "HANDLER_CLASS", None):
             inputs["required"]["api_type"] = (
                 registry.get_handler_choices(),
                 {"default": "auto", "tooltip": "Select booru api type. 'auto' should generally be OK to use"},
@@ -168,14 +177,39 @@ class BaseBooruNode:
         return self._build_return_tuple(img_tensor, tags_dict, img_width, img_height)
 
     def _get_handler(self, url: str, api_type: str):
-        """Get the appropriate handler for the URL and API type."""
-        # If this node forces a specific API type, use that
-        if self.N_HANDLER_NAME:
-            return registry.get_handler_by_name(self.N_HANDLER_NAME)
+        """Get the appropriate handler for the URL and API type.
+
+        If HANDLER_CLASS is set on the node, use that handler.
+
+        If api_type == "auto", detect from URL.
+
+        (ignore)As a last resort, attempt to infer handler by stripping common suffixes
+        from the node class name (e.g., DanbooruPostNode -> "Danbooru").
+        """
+        # Explicit handler class binding
+        handler_cls = getattr(self, "HANDLER_CLASS", None)
+        if handler_cls is not None:
+            # Prefer registry instance for consistency/state sharing
+            by_name = registry.get_handler_by_name(getattr(handler_cls, "HANDLER_NAME", ""))
+            if by_name:
+                return by_name
 
         # If auto mode, try to detect from URL
         if api_type == "auto":
             return registry.get_handler_for_url(url)
+            # NOTE: probably not needed below
+            # detected = registry.get_handler_for_url(url)
+            # if detected:
+            #     return detected
+            # # Fallback: try to infer from node class name (e.g., DanbooruPostNode -> "Danbooru")
+            # cls_name = self.__class__.__name__
+            # for suffix in ("PostNode", "Node"):
+            #     if cls_name.endswith(suffix):
+            #         candidate = cls_name[: -len(suffix)]
+            #         inferred = registry.get_handler_by_name(candidate)
+            #         if inferred:
+            #             return inferred
+            #         break
 
         # Otherwise, use the specified handler
         return registry.get_handler_by_name(api_type)

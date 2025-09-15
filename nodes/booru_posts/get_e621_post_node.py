@@ -1,3 +1,4 @@
+from ..booru_posts.booru_post_handlers.e621_handler import E621Handler
 from ..booru_posts.get_post_node_base import BaseBooruNode
 
 
@@ -6,7 +7,7 @@ class E621PostNode(BaseBooruNode):
     A node specifically for fetching posts from e621.net and e6ai.net.
     """
 
-    N_HANDLER_NAME = "e621/e6ai"  # This should match the HANDLER_NAME so it can find the correct handler
+    HANDLER_CLASS = E621Handler
 
     EXPERIMENTAL = False
 

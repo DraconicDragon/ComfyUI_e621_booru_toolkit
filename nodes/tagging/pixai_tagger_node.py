@@ -7,7 +7,7 @@ from PIL import Image
 
 from .inference.pixai_tagger_pth import EndpointHandler
 
-
+# todo: make this like post nodes where theres one central one that can execute evry one of them (might not work? consider RRTagger steps thingy?? idkw hat it does)
 class PixAITaggerNode:
     MODELS_DIR = os.path.normpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "..", "models"))
 

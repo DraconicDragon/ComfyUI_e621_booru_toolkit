@@ -26,7 +26,7 @@ class PixAITaggerNode:
             tags = None
             mapping = None
             for f in os.listdir(folder_path):
-                if f.lower().endswith((".pth", ".safetensors")):
+                if f.lower().endswith((".pt", ".pth", ".safetensors", ".sft")):
                     weights = f
                 elif f.lower().startswith("tags_") and f.lower().endswith(".json"):
                     tags = f

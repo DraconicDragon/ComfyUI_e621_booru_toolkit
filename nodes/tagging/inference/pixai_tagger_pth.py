@@ -65,8 +65,16 @@ def get_model():
 
 def load_model(weights_file, device):
     model = get_model()
-    states_dict = torch.load(weights_file, map_location=device, weights_only=True)
-    model.load_state_dict(states_dict)
+    suffix = Path(weights_file).suffix.lower()
+    if suffix in {".safetensors", ".sft"}:
+        try:
+            from safetensors.torch import load_file as safe_load_file
+        except ImportError as e:
+            raise RuntimeError("Failed to load pixai tagger model (safetensors version). " + str(e)) from e
+        state_dict = safe_load_file(weights_file, device="cpu")
+    else:
+        state_dict = torch.load(weights_file, map_location="cpu", weights_only=True)
+    model.load_state_dict(state_dict)
     model.to(device)
     model.eval()
     return model

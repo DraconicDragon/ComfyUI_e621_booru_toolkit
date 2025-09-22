@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from .inference.pixai_tagger_pth import EndpointHandler
+from .inference.pixai_tagger_pth_sft import EndpointHandler
 
 # todo: make this like post nodes where theres one central one that can execute evry one of them (might not work? consider RRTagger steps thingy?? idkw hat it does)
 class PixAITaggerNode:

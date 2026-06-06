@@ -1,8 +1,8 @@
 import io
 
 import numpy as np
-import requests
-import torch  # type: ignore
+from curl_cffi import requests
+import torch
 from PIL import Image
 
 from ..misc.utils import calculate_dimensions_for_diffusion, to_tensor
@@ -44,7 +44,11 @@ def get_e621_post_data(response, img_size):
         if not image_url:  # fallback
             image_url = post.get("file", {}).get("url")
 
-        img_data = requests.get(image_url).content
+        img_data = requests.get(
+            image_url,
+            timeout=10,
+            impersonate="firefox",
+        ).content
         img_stream = io.BytesIO(img_data)
         image_ = Image.open(img_stream)
         img_tensor = to_tensor(image_)
@@ -85,7 +89,11 @@ def get_danbooru_post_data(response, img_size):
         else:  # fallback to original image
             image_url = response.get("file_url")
 
-        img_data = requests.get(image_url).content
+        img_data = requests.get(
+            image_url,
+            timeout=10,
+            impersonate="firefox",
+        ).content
         img_stream = io.BytesIO(img_data)
         image_ = Image.open(img_stream)
         img_tensor = to_tensor(image_)
@@ -191,13 +199,23 @@ class GetBooruPost:
 
         # todo: check if e6 api format or dbr, or other, needs to get api response first
         if any(keyword in json_url for keyword in ["e621", "e926", "e6ai"]):
-            response = requests.get(json_url, headers=headers).json()
+            response = requests.get(
+                json_url,
+                headers=headers,
+                timeout=10,
+                impersonate="firefox",
+            ).json()
             img_tensor, tags_dict, og_img_width, og_img_height = get_e621_post_data(response, img_size)
 
         # elif: # for other sites
 
         else:  # danbooru used / used as fallback for now
-            response = requests.get(json_url, headers=headers).json()
+            response = requests.get(
+                json_url,
+                headers=headers,
+                timeout=10,
+                impersonate="firefox",
+            ).json()
             img_tensor, tags_dict, og_img_width, og_img_height = get_danbooru_post_data(response, img_size)
 
         # print(f"E621 Booru Toolkit DEBUG - Possibly unsupported site? Using danbooru as fallback. URL: {json_url}")

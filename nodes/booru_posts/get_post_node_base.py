@@ -3,8 +3,9 @@ import logging
 from typing import Dict, Optional, Tuple
 
 import numpy as np
-import requests
 import torch
+from curl_cffi import requests
+from curl_cffi.requests.exceptions import RequestException
 from PIL import Image
 
 from ..booru_posts.booru_post_handlers.handler_registry import registry
@@ -14,10 +15,8 @@ from ..misc.utils import (
     to_tensor,
 )
 
-
-
 # todo: so basically when request comes in for auto mode it checks every handler for SUPPORTED_DOMAINS
-# and then picks the first one that matches, but when no match, it errors; for this now we assume e926.net url 
+# and then picks the first one that matches, but when no match, it errors; for this now we assume e926.net url
 # and we also assume its not set in SUPPORTED_DOMAINS of E621Handler:
 # if mode is not "auto" and instead its set to e621 (like when e621postnode is used)
 # then itll ignore SUPPORTED_DOMAINS and WILL make the request to e926 and WILL try to parse it, where auto would say no and not do it
@@ -143,7 +142,7 @@ class BaseBooruNode:
         api_type: str = "auto",
     ) -> Tuple:
         """Main function to fetch and process booru data."""
-        headers = {"User-Agent": "ComfyUI_e621_booru_toolkit/1.0 (by draconicdragon on GitHub)"}
+        headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:151.0) Gecko/20100101 Firefox/151.0"}
         blank_img_tensor = torch.from_numpy(np.zeros((64, 64, 3), dtype=np.float32) / 255.0).unsqueeze(0)
 
         # Raise error if URL is empty after trimming
@@ -223,12 +222,16 @@ class BaseBooruNode:
             return blank_img_tensor
 
         try:
-            img_data = requests.get(image_url, timeout=10)
+            img_data = requests.get(
+                image_url,
+                timeout=10,
+                impersonate="firefox",
+            )
             img_data.raise_for_status()
             img_stream = io.BytesIO(img_data.content)
             image_ = Image.open(img_stream)
             return to_tensor(image_)
-        except requests.RequestException as req_exc:
+        except RequestException as req_exc:
             logging.error(f"Image download failed: {req_exc}")
             return blank_img_tensor
         except (OSError, ValueError) as img_exc:

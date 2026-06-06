@@ -3,8 +3,8 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
 
-import requests
-
+from curl_cffi import requests
+from curl_cffi.requests.exceptions import RequestException
 
 class BooruHandlerBase(ABC):
     """
@@ -41,7 +41,12 @@ class BooruHandlerBase(ABC):
             api_url = self.get_api_url(url)
             logging.info(f"Fetching from {self.HANDLER_NAME}: {api_url}")
 
-            response = requests.get(api_url, headers=headers, timeout=10)
+            response = requests.get(
+                api_url,
+                headers=headers,
+                timeout=10,
+                impersonate="firefox",
+            )
             response.raise_for_status()
 
             # Try JSON first
@@ -53,7 +58,7 @@ class BooruHandlerBase(ABC):
                 # If JSON fails, try XML
                 return self._parse_xml_response(response.text)
 
-        except requests.RequestException as e:
+        except RequestException as e:
             logging.error(f"Failed to fetch from {self.HANDLER_NAME}: {e}")
             raise ValueError(f"Failed to fetch data from {self.HANDLER_NAME}: {e}")
         except Exception as e:
